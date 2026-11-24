@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="krillion">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Krillion &amp; Anti-Krillion — Deep Dive vs. Hive Climb</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Fullscreen 60 FPS Canvas Backdrop -->
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+  <!-- Top Utility Bar -->
+  <header class="topbar">
+    <div class="brand" id="brand-logo" title="Back to Menu">
+      <span class="brand-icon" id="brand-icon">🦐</span>
+      <span class="brand-title">KRILLION <span class="brand-amp">&amp;</span> ANTI-KRILLION</span>
+    </div>
+    <div class="topbar-controls">
+      <span class="fps-badge" id="fps-badge" title="Live Render Frame Rate">60 FPS</span>
+      <button class="icon-btn" id="btn-sound" title="Toggle Sound" aria-label="Toggle Sound">🔊</button>
+      <button class="icon-btn hidden" id="btn-home" title="Return to Menu" aria-label="Return to Menu">✕</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <!-- ==================== MENU SCREEN ==================== -->
+    <section id="screen-menu" class="screen active">
+      <div class="hero-card glass">
+        <p class="eyebrow">DUAL-POLARITY WORD TRIVIA</p>
+        <h1 class="hero-title">Sink to the Trench.<br />Or Soar with the Crowd.</h1>
+        <p class="hero-sub">
+          Type any valid answer before time runs out. Flip your instincts between hunting ultra-rare gems and channeling the hive mind.
+        </p>
+
+        <!-- Mode Selector -->
+        <div class="mode-grid" role="radiogroup" aria-label="Select Game Mode">
+          <button class="mode-card selected" data-mode="krillion" type="button">
+            <span class="mode-emoji">🌊</span>
+            <span class="mode-name">KRILLION</span>
+            <span class="mode-tag">Rarest Answer Wins</span>
+            <span class="mode-desc">Obvious answers float. Rare gems sink you into the abyss.</span>
+          </button>
+
+          <button class="mode-card" data-mode="antikrillion" type="button">
+            <span class="mode-emoji">🎈</span>
+            <span class="mode-name">ANTI-KRILLION</span>
+            <span class="mode-tag">Most Common Wins</span>
+            <span class="mode-desc">Think like 100 people on the street. Hit #1 to climb into orbit.</span>
+          </button>
+
+          <button class="mode-card" data-mode="chaos" type="button">
+            <span class="mode-emoji">⚡</span>
+            <span class="mode-name">CHAOS FLIP</span>
+            <span class="mode-tag">Alternates Every Round</span>
+            <span class="mode-desc">Every prompt flips polarity. Don't let muscle memory trap you.</span>
+          </button>
+        </div>
+
+        <!-- Settings Row -->
+        <div class="config-row">
+          <label class="config-field">
+            <span>Category</span>
+            <select id="category-select">
+              <option value="all">All Categories (Mixed)</option>
+              <option value="Nature & Animals">Nature &amp; Animals</option>
+              <option value="Food & Drink">Food &amp; Drink</option>
+              <option value="Geography">Geography</option>
+              <option value="Pop Culture">Pop Culture</option>
+              <option value="Science & Everyday">Science &amp; Everyday</option>
+              <option value="Sports & Games">Sports &amp; Games</option>
+            </select>
+          </label>
+
+          <label class="config-field">
+            <span>Run Length</span>
+            <select id="rounds-select">
+              <option value="7" selected>Classic (7 Prompts)</option>
+              <option value="5">Quick (5 Prompts)</option>
+              <option value="12">Marathon (12 Prompts)</option>
+            </select>
+          </label>
+        </div>
+
+        <button id="btn-start" class="btn-primary pulse-glow" type="button">
+          START DIVE
+        </button>
+
+        <!-- Persistent Stats -->
+        <div class="stats-strip">
+          <div class="stat-pill">
+            <span class="stat-label">Best Dive</span>
+            <span class="stat-val" id="stat-best-depth">0m</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">Best Climb</span>
+            <span class="stat-val" id="stat-best-alt">0ft</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">Runs Played</span>
+            <span class="stat-val" id="stat-played">0</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PLAY SCREEN ==================== -->
+    <section id="screen-play" class="screen">
+      <!-- Live HUD -->
+      <div class="hud glass">
+        <div class="hud-left">
+          <span class="hud-pill" id="hud-mode-pill">KRILLION</span>
+          <span class="hud-round" id="hud-round">Prompt 1 / 7</span>
+        </div>
+        <div class="hud-center">
+          <span class="hud-zone-label" id="hud-zone">SUNLIT SURFACE</span>
+        </div>
+        <div class="hud-right">
+          <span class="hud-metric-label" id="hud-metric-label">DEPTH</span>
+          <span class="hud-metric-value" id="hud-metric-value">0m</span>
+        </div>
+      </div>
+
+      <!-- 60 FPS Timer Bar -->
+      <div class="timer-track">
+        <div class="timer-fill" id="timer-bar-fill"></div>
+        <span class="timer-text" id="timer-text">25.0s</span>
+      </div>
+
+      <!-- Active Prompt Card -->
+      <div id="prompt-card" class="play-card glass">
+        <div class="card-meta">
+          <span class="cat-badge" id="prompt-category">Nature &amp; Animals</span>
+          <span class="goal-banner" id="prompt-goal-banner">🎯 RAREST VALID ANSWER WINS</span>
+        </div>
+
+        <h2 class="prompt-text" id="prompt-text">Name an animal that eats fish</h2>
+        <p class="prompt-hint" id="prompt-hint">Type any specific valid answer. Spelling typos are forgiven.</p>
+
+        <form id="answer-form" class="answer-form" autocomplete="off">
+          <input
+            type="text"
+            id="answer-input"
+            class="answer-input"
+            placeholder="Type your answer..."
+            maxlength="48"
+            spellcheck="false"
+            required
+          />
+          <button type="submit" id="btn-submit" class="btn-submit">LOCK IN ↵</button>
+        </form>
+
+        <div class="input-footer">
+          <span id="input-feedback" class="input-feedback" role="status" aria-live="polite"></span>
+          <button type="button" id="btn-skip" class="btn-ghost">Skip Prompt →</button>
+        </div>
+      </div>
+
+      <!-- Round Result / Crowd Reveal Card -->
+      <div id="reveal-card" class="play-card glass hidden">
+        <div class="reveal-header">
+          <span class="tier-badge" id="reveal-tier">ONE IN A KRILLION</span>
+          <div class="reveal-delta" id="reveal-delta">+1,420m</div>
+        </div>
+
+        <div class="reveal-summary">
+          <span class="reveal-echo" id="reveal-answer-echo">Your answer: <strong>Osprey</strong></span>
+          <span class="reveal-pct" id="reveal-crowd-pct">0.8% of players said this</span>
+        </div>
+
+        <div class="crowd-board">
+          <div class="crowd-board-title" id="crowd-board-title">THE CATCH — CROWD BREAKDOWN</div>
+          <div id="reveal-bars" class="reveal-bars"></div>
+        </div>
+
+        <button type="button" id="btn-next" class="btn-primary">
+          NEXT PROMPT ↵
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== SUMMARY SCREEN ==================== -->
+    <section id="screen-summary" class="screen">
+      <div class="summary-card glass">
+        <span class="summary-badge" id="summary-badge">DIVE COMPLETE</span>
+        <h2 class="summary-title" id="summary-title">Hadal Trench Explorer</h2>
+
+        <div class="summary-hero-score">
+          <span id="summary-score">6,480m</span>
+          <small id="summary-zone">Final Zone: Abyssal Plain</small>
+        </div>
+
+        <div class="best-pick-box" id="summary-best-pick"></div>
+
+        <div class="summary-list" id="summary-breakdown"></div>
+
+        <div class="summary-actions">
+          <button type="button" id="btn-share" class="btn-secondary">📋 Copy Result</button>
+          <button type="button" id="btn-play-again" class="btn-primary">Play Again</button>
+          <button type="button" id="btn-back-menu" class="btn-ghost">Menu</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="questions.js"></script>
+  <script src="renderer.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
